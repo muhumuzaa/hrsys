@@ -9,39 +9,38 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # Add both contents: read and id-token: write
     permissions:
-      contents: read  # required for actions/checkout
+      contents: read
+      id-token: write
 
     steps:
-      # 1) Check out the code from the 'azure' branch
       - uses: actions/checkout@v4
 
-      # 2) Use Node 20.x
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
 
-      # 3) Install & (optionally) build in the "server" folder
-      - name: Install dependencies and build
+      - name: Install/build in server folder
         run: |
           cd server
           npm install
-          # If you have a "postinstall" that builds the frontend, it will run automatically.
-          # Otherwise, do "npm run build" or "npm run test" etc., if needed.
+          npm run build --if-present
 
-      # 4) Log in to Azure
       - name: Login to Azure
         uses: azure/login@v2
         with:
+          # If using a service principal approach:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_5CD1CE2A6C454AD4B95A8FDD0F3ED75F }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_A3D2E6D67B1944D5AD8041249BD263C3 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_772765EFE74F418FB0CA10C3EA84FB13 }}
+          # If you have a client secret, also include:
+          # client-secret: ${{ secrets.AZUREAPPSERVICE_CLIENTSECRET_XXXX }}
 
-      # 5) Deploy the *server folder* directly (no zip) to Azure
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'hrsys'          # The name of your Azure Web App
-          slot-name: 'Production'    # If you use production slot
-          package: './server'        # <-- This is the key! Deploy the server folder directly
+          app-name: 'hrsys'
+          slot-name: 'Production'
+          package: './server'   # or '.' if your Node code is at root
