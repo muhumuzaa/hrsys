@@ -29,10 +29,7 @@ jobs:
           cd server
           npm install
           npm run build --if-present
-          #npm run test --if-present
-          cd .. #return to root
-          #copy frontend/dist to server/dist
-          cp -r frontend/dist server/dist
+          
 
       - name: Zip artifact for deployment
         run: zip release.zip ./* -r
@@ -75,5 +72,5 @@ jobs:
         with:
           app-name: 'hrsys'
           slot-name: 'Production'
-          package: './server'
+          package: '.'
           
