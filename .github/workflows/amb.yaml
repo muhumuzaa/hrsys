@@ -2,7 +2,7 @@ name: Deploy to Azure
 
 on:
   push:
-    branches: [ main ]
+    branches: [ azure ]
 
 jobs:
   build-and-deploy:
@@ -16,7 +16,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: 18.x
+        node-version: 20.x
 
     # Install root dependencies (if any)
     - name: Install root dependencies
