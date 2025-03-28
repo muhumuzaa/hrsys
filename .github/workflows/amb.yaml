@@ -1,42 +1,46 @@
-name: Build and deploy Node.js app to Azure Web App
+name: Deploy to Azure
 
 on:
   push:
-    branches: [ "azure" ]
-  workflow_dispatch:
-
-# IMPORTANT: Set ID token permissions globally
-permissions:
-  contents: read
-  id-token: write
+    branches: [ main ]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
+    environment: production
+    
     steps:
-      - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Use Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
 
-      - name: Install and Build
-        run: |
-          npm install
-          npm run build --if-present
+    # Install root dependencies (if any)
+    - name: Install root dependencies
+      run: npm install
+      working-directory: ./
 
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          # No client-secret => OIDC login
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    # Install and build frontend
+    - name: Install frontend dependencies
+      run: npm install
+      working-directory: ./frontend
 
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'hrapp'
-          package: '.'
+    - name: Build frontend
+      run: npm run build
+      working-directory: ./frontend
+
+    # Install server dependencies
+    - name: Install server dependencies
+      run: npm install
+      working-directory: ./server
+
+    # Deploy to Azure
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: 'YOUR_APP_NAME'
+        slot-name: 'Production'
+        publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
