@@ -1,46 +1,51 @@
-name: Deploy to Azure
+name: Deploy Node.js App to Azure Web App
 
 on:
   push:
-    branches: [ azure ]
+    branches:
+      - azure
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: production
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # 1. Check out the repository
+      - uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 20.x
+      # 2. Set up Node.js (using Node 20)
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
 
-    # Install root dependencies (if any)
-    - name: Install root dependencies
-      run: npm install
-      working-directory: ./
+      # 3. Build the frontend (Vite) so that the "dist" folder is created
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: |
+          npm install
+          npm run build
 
-    # Install and build frontend
-    - name: Install frontend dependencies
-      run: npm install
-      working-directory: ./frontend
+      # 4. Install server dependencies
+      - name: Install Server Dependencies
+        working-directory: ./server
+        run: npm install
 
-    - name: Build frontend
-      run: npm run build
-      working-directory: ./frontend
+      # 5. Login to Azure using service principal credentials
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          auth-type: sp
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
-    # Install server dependencies
-    - name: Install server dependencies
-      run: npm install
-      working-directory: ./server
-
-    # Deploy to Azure
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: 'YOUR_APP_NAME'
-        slot-name: 'Production'
-        publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+      # 6. Deploy the "server" folder to Azure Web App
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'HR Sys'
+          slot-name: 'Production'
+          package: './server'
