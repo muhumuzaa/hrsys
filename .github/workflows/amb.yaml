@@ -1,12 +1,11 @@
-name: Build and deploy Node.js app to Azure Web App - hrapp
+name: Build and deploy Node.js app to Azure Web App
 
 on:
   push:
-    branches:
-      - azure
+    branches: [ "azure" ]
   workflow_dispatch:
 
-# IMPORTANT: Provide ID token write permissions for OIDC
+# IMPORTANT: Set ID token permissions globally
 permissions:
   contents: read
   id-token: write
@@ -16,37 +15,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Check out your repo code
       - uses: actions/checkout@v4
 
-      # 2) Set up Node.js
-      - name: Set up Node.js version
+      - name: Use Node
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
+          node-version: 20
 
-      # 3) Install (and optionally build) your app
-      - name: npm install and build
+      - name: Install and Build
         run: |
           npm install
           npm run build --if-present
-          # npm run test --if-present
 
-      # 4) Login to Azure via OIDC 
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          # The client-id must match your Azure AD app registration's "Application (client) ID"
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID }}
-          # (no client-secret => defaults to OIDC)
+          # No client-secret => OIDC login
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # 5) Deploy directly to your Azure Web App (no zip)
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          # Replace 'hrapp' with your actual web app name in Azure
           app-name: 'hrapp'
-          # Deploy from the current directory
           package: '.'
